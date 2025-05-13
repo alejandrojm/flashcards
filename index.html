@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Flashcards Educativo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #e0f7fa;
+        }
+        .flashcard {
+            background-color: #fff;
+            border-radius: 0.75rem;
+            box-shadow: 0 6px 10px -2px rgba(0, 0, 0, 0.15), 0 3px 7px -2px rgba(0, 0, 0, 0.07);
+            cursor: pointer;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            height: 250px;
+            width: 400px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.75rem;
+            border: 1px solid #e0e0e0;
+            padding: 1.5rem; /* Aumenta el padding para el contenido de la tarjeta */
+            box-sizing: border-box; /* Incluye el padding en el ancho y alto de la tarjeta */
+        }
+
+        .flashcard-front {
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        .flashcard-back {
+            background-color: #f0f0f0;
+            color: #333;
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-front h2, .flashcard-back h2 {
+            font-size: 1.85rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem; /* Aumenta el margen inferior del título */
+            color: #4caf50;
+            text-align: center; /* Centra el título */
+        }
+
+        .flashcard-front p, .flashcard-back p {
+            font-size: 1.1rem;
+            color: #555;
+            text-align: center;
+            line-height: 1.7; /* Aumenta el espaciado entre líneas */
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 2rem;
+        }
+
+        .controls button {
+            background-color: #4caf50;
+            color: white;
+            font-weight: 500;
+            padding: 0.8rem 1.6rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.3s ease;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls button:hover {
+            background-color: #45a049;
+        }
+
+        .controls button:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.3);
+        }
+
+        #cardCount {
+            color: #777;
+            margin-top: 1.25rem;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-blue-100 min-h-screen flex items-center justify-center py-10">
+    <div class="container mx-auto">
+        <h1 class="text-3xl font-semibold text-gray-800 text-center mb-8">Aprende con Flashcards</h1>
+        <div class="flashcard mx-auto" id="myFlashcard">
+            <div class="flashcard-face flashcard-front">
+                <h2 class="text-2xl font-semibold">Pregunta</h2>
+                <p id="questionText" class="text-gray-700 text-center"></p>
+            </div>
+            <div class="flashcard-face flashcard-back">
+                <h2 class="text-2xl font-semibold">Respuesta</h2>
+                <p id="answerText" class="text-gray-700 text-center"></p>
+            </div>
+        </div>
+
+        <div class="controls mt-8 space-x-4">
+            <button id="prevBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Anterior</button>
+            <button id="nextBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Siguiente</button>
+        </div>
+         <div class="text-center mt-4">
+            <span id="cardCount" class="text-gray-600"></span>
+        </div>
+    </div>
+
+    <script>
+        const flashcard = document.getElementById('myFlashcard');
+        const questionText = document.getElementById('questionText');
+        const answerText = document.getElementById('answerText');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const cardCount = document.getElementById('cardCount');
+
+        const flashcards = [
+            { question: "¿Qué es el Aprendizaje Automático (Machine Learning)?", answer: "Es un campo de la IA que permite a las computadoras aprender sin ser programadas explícitamente." },
+            { question: "¿Cuáles son los tipos principales de Aprendizaje Automático?", answer: "Supervisado, No Supervisado y por Refuerzo." },
+            { question: "¿Qué es un algoritmo de clasificación?", answer: "Un algoritmo que asigna una entrada a una categoría (clase)." },
+            { question: "¿Qué es un algoritmo de regresión?", answer: "Un algoritmo que predice un valor numérico." },
+            { question: "¿Qué es el sobreajuste (overfitting)?", answer: "Ocurre cuando un modelo aprende demasiado bien los detalles del conjunto de entrenamiento, afectando su generalización a nuevos datos." },
+            { question: "¿Qué es el desajuste (underfitting)?", answer: "Ocurre cuando un modelo no puede capturar la complejidad subyacente de los datos, resultando en un mal rendimiento incluso en el conjunto de entrenamiento." },
+            { question: "¿Qué es la validación cruzada?", answer: "Una técnica para evaluar el rendimiento de un modelo dividiendo los datos en subconjuntos para entrenamiento y prueba." },
+            { question: "¿Qué es un árbol de decisión?", answer: "Un modelo de aprendizaje automático que utiliza una estructura de árbol para tomar decisiones basadas en características de los datos." },
+            { question: "¿Qué es una red neuronal?", answer: "Un modelo inspirado en el cerebro humano, compuesto por capas de nodos interconectados que procesan información." },
+            { question: "¿Qué es el aprendizaje profundo (Deep Learning)?", answer: "Un subcampo del aprendizaje automático que utiliza redes neuronales con muchas capas (redes profundas) para aprender representaciones complejas de los datos." },
+            { question: "¿Qué es TensorFlow?", answer: "Una biblioteca de código abierto desarrollada por Google para implementar modelos de aprendizaje automático." },
+            { question: "¿Qué es PyTorch?", answer: "Una biblioteca de código abierto popular para investigación en aprendizaje profundo, desarrollada por Facebook." },
+            { question: "¿Qué es el procesamiento del lenguaje natural (NLP)?", answer: "Un campo de la IA que se enfoca en la interacción entre las computadoras y el lenguaje humano." },
+            { question: "¿Qué es la visión por computadora?", answer: "Un campo de la IA que permite a las computadoras 'ver' e interpretar imágenes y videos." },
+            { question: "¿Qué es el refuerzo positivo en el aprendizaje por refuerzo?", answer: "Una recompensa que se le da a un agente por realizar una acción deseable." },
+            { question: "¿Qué es el refuerzo negativo en el aprendizaje por refuerzo?", answer: "Un castigo que se le da a un agente por realizar una acción indeseable." },
+            { question: "¿Qué es una función de activación?", answer: "Una función en una red neuronal que determina si un nodo debe 'activarse' o no, basada en su entrada." },
+            { question: "¿Qué es el descenso de gradiente?", answer: "Un algoritmo de optimización utilizado para minimizar el error de un modelo de aprendizaje automático." },
+            { question: "¿Qué es el tamaño del lote (batch size)?", answer: "El número de ejemplos de entrenamiento utilizados en una iteración del descenso de gradiente." },
+            { question: "¿Qué es una época (epoch)?", answer: "Una iteración completa a través de todo el conjunto de datos de entrenamiento." },
+        ];
+
+        let currentCardIndex = 0;
+
+        function displayCard() {
+            questionText.textContent = flashcards[currentCardIndex].question;
+            answerText.textContent = flashcards[currentCardIndex].answer;
+            cardCount.textContent = `Tarjeta ${currentCardIndex + 1} de ${flashcards.length}`;
+        }
+
+        function flipCard() {
+            flashcard.classList.toggle('flipped');
+        }
+
+        function nextCard() {
+            currentCardIndex = (currentCardIndex + 1) % flashcards.length;
+            flashcard.classList.remove('flipped');
+            displayCard();
+        }
+
+        function prevCard() {
+            currentCardIndex = (currentCardIndex - 1 + flashcards.length) % flashcards.length;
+            flashcard.classList.remove('flipped');
+            displayCard();
+        }
+
+        // Event listeners
+        flashcard.addEventListener('click', flipCard);
+        nextBtn.addEventListener('click', nextCard);
+        prevBtn.addEventListener('click', prevCard);
+
+        // Initial call to display the first card
+        displayCard();
+    </script>
+</body>
+</html>
